@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,8 @@
     <!-- Supabase JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Pretendard Font -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="stylesheet" href="style.css">
     <script>
         tailwind.config = {
@@ -35,6 +37,7 @@
         }
     </script>
 </head>
+
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
     <!-- 최상단 네비게이션 헤더 -->
@@ -49,7 +52,8 @@
                     <div>
                         <div class="flex items-center space-x-2">
                             <h1 class="text-lg font-bold tracking-tight">스마트 국방 당직·근무 일정 관리 시스템</h1>
-                            <span class="bg-emerald-900 text-emerald-300 text-xs px-2 py-0.5 rounded-full border border-emerald-700">v2.0</span>
+                            <span
+                                class="bg-emerald-900 text-emerald-300 text-xs px-2 py-0.5 rounded-full border border-emerald-700">v2.0</span>
                         </div>
                         <p class="text-xs text-slate-400">부대 당직 편성 및 실시간 근무 조회 포털</p>
                     </div>
@@ -58,13 +62,15 @@
                 <!-- 실시간 시계 & 사용자/관리자 모드 & Supabase 설정 -->
                 <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
                     <!-- 실시간 시계 -->
-                    <div class="hidden md:flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+                    <div
+                        class="hidden md:flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
                         <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
                         <span id="liveClock" class="font-mono text-slate-200">2026-11-18 17:00:00</span>
                     </div>
 
-                    <!-- Supabase 상태 뱃지 -->
-                    <button id="btnOpenSupabaseModal" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors bg-slate-800 border-slate-700 hover:bg-slate-700">
+                    <!-- Supabase 상태 뱃지 (관리자 전용) -->
+                    <button id="btnOpenSupabaseModal"
+                        class="hidden flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors bg-slate-800 border-slate-700 hover:bg-slate-700">
                         <span id="supabaseStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
                         <span id="supabaseStatusText" class="text-slate-300">연동 확인중</span>
                         <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
@@ -72,10 +78,12 @@
 
                     <!-- 관리자 / 일반 사용자 모드 토글 버튼 -->
                     <div class="flex items-center bg-slate-800 p-1 rounded-lg border border-slate-700">
-                        <button id="btnModeUser" class="px-3 py-1 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all">
+                        <button id="btnModeUser"
+                            class="px-3 py-1 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all">
                             일반 사용자
                         </button>
-                        <button id="btnModeAdmin" class="px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition-all">
+                        <button id="btnModeAdmin"
+                            class="px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition-all">
                             관리자 모드
                         </button>
                     </div>
@@ -87,10 +95,12 @@
     <!-- 메인 컨테이너 -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        <!-- Supabase 미연동 시 눈에 확 띄는 메인 연결 안내 배너 -->
-        <div id="supabaseConnectBanner" class="mb-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-5 rounded-2xl shadow-md border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Supabase 미연동 시 눈에 확 띄는 메인 연결 안내 배너 (관리자 전용) -->
+        <div id="supabaseConnectBanner"
+            class="hidden mb-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-5 rounded-2xl shadow-md border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center space-x-3.5">
-                <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-lg shrink-0">
+                <div
+                    class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold text-lg shrink-0">
                     ⚡
                 </div>
                 <div>
@@ -98,14 +108,16 @@
                     <p class="text-xs text-slate-300 mt-0.5">현재 로컬 데모 모드입니다. Supabase 키를 입력하면 클라우드에 데이터가 영구 보존됩니다.</p>
                 </div>
             </div>
-            <button id="btnBannerOpenSupabaseModal" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs rounded-xl shadow transition-transform active:scale-95 whitespace-nowrap flex items-center space-x-1.5 shrink-0">
+            <button id="btnBannerOpenSupabaseModal"
+                class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs rounded-xl shadow transition-transform active:scale-95 whitespace-nowrap flex items-center space-x-1.5 shrink-0">
                 <i data-lucide="key" class="w-4 h-4"></i>
                 <span>Supabase 키 입력하여 연결하기</span>
             </button>
         </div>
 
         <!-- 관리자 모드 활성화 알림 배너 (관리자일 때만 노출) -->
-        <div id="adminModeBanner" class="hidden mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
+        <div id="adminModeBanner"
+            class="hidden mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600"></i>
@@ -115,11 +127,14 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <button id="btnOpenAssignmentModal" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center space-x-1">
+                    <button id="btnOpenAssignmentModal"
+                        class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center space-x-1">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                         <span>새 근무 배정 등록</span>
                     </button>
-                    <button id="btnQuickSeed" class="bg-slate-700 hover:bg-slate-800 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center space-x-1" title="시연 및 테스트용 샘플 데이터 자동 입력">
+                    <button id="btnQuickSeed"
+                        class="bg-slate-700 hover:bg-slate-800 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center space-x-1"
+                        title="시연 및 테스트용 샘플 데이터 자동 입력">
                         <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
                         <span>샘플 데이터 채우기</span>
                     </button>
@@ -175,22 +190,27 @@
         </div>
 
         <!-- 탭 네비게이션 & 빠른 액션 바 -->
-        <div class="bg-white rounded-t-xl border-x border-t border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div
+            class="bg-white rounded-t-xl border-x border-t border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-4">
             <!-- 탭 버튼들 -->
             <div class="flex items-center space-x-1">
-                <button id="tabBtnCalendar" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-slate-900 text-white flex items-center space-x-2">
+                <button id="tabBtnCalendar"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-slate-900 text-white flex items-center space-x-2">
                     <i data-lucide="calendar-days" class="w-4 h-4"></i>
                     <span>월간 캘린더</span>
                 </button>
-                <button id="tabBtnList" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
+                <button id="tabBtnList"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
                     <i data-lucide="list-filter" class="w-4 h-4"></i>
                     <span>일자별 전체 근무표</span>
                 </button>
-                <button id="tabBtnMyDuty" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
+                <button id="tabBtnMyDuty"
+                    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
                     <i data-lucide="user" class="w-4 h-4"></i>
                     <span>내 근무 조회</span>
                 </button>
-                <button id="tabBtnManage" class="tab-btn hidden px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
+                <button id="tabBtnManage"
+                    class="tab-btn hidden px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
                     <i data-lucide="settings-2" class="w-4 h-4"></i>
                     <span>인원 및 근무종류 관리</span>
                 </button>
@@ -198,13 +218,17 @@
 
             <!-- 우측 보조 컨트롤 (내 근무 하이라이트 셀렉트박스 & 인쇄) -->
             <div class="flex items-center space-x-2">
-                <div class="flex items-center space-x-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
+                <div
+                    class="flex items-center space-x-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
                     <label for="selectHighlightUser" class="text-slate-500 font-medium">근무자 강조:</label>
-                    <select id="selectHighlightUser" class="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer">
+                    <select id="selectHighlightUser"
+                        class="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer">
                         <option value="">전체 보기</option>
                     </select>
                 </div>
-                <button id="btnPrintSchedule" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg border border-slate-200" title="근무표 인쇄 / PDF 저장">
+                <button id="btnPrintSchedule"
+                    class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg border border-slate-200"
+                    title="근무표 인쇄 / PDF 저장">
                     <i data-lucide="printer" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -217,13 +241,16 @@
                 <div class="flex items-center space-x-3">
                     <h2 id="calendarMonthTitle" class="text-xl font-bold text-slate-900">2026년 11월</h2>
                     <div class="flex items-center space-x-1">
-                        <button id="btnPrevMonth" class="p-1.5 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600">
+                        <button id="btnPrevMonth"
+                            class="p-1.5 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600">
                             <i data-lucide="chevron-left" class="w-4 h-4"></i>
                         </button>
-                        <button id="btnCurrentMonth" class="px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-700">
+                        <button id="btnCurrentMonth"
+                            class="px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-700">
                             오늘
                         </button>
-                        <button id="btnNextMonth" class="p-1.5 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600">
+                        <button id="btnNextMonth"
+                            class="p-1.5 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600">
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -231,10 +258,14 @@
 
                 <!-- 범례(Legend) -->
                 <div class="hidden sm:flex items-center space-x-3 text-xs text-slate-500">
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span><span>당직사령</span></span>
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span><span>당직사관</span></span>
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span><span>당직병</span></span>
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span><span>경계/불침번</span></span>
+                    <span class="flex items-center space-x-1"><span
+                            class="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span><span>당직사령</span></span>
+                    <span class="flex items-center space-x-1"><span
+                            class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span><span>당직사관</span></span>
+                    <span class="flex items-center space-x-1"><span
+                            class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span><span>당직병</span></span>
+                    <span class="flex items-center space-x-1"><span
+                            class="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span><span>경계/불침번</span></span>
                 </div>
             </div>
 
@@ -260,8 +291,10 @@
             <!-- 검색 및 필터 헤더 -->
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
                 <div class="flex items-center space-x-2">
-                    <input type="text" id="filterSearchName" placeholder="근무자 이름 / 군번 검색" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 w-48">
-                    <select id="filterDutyType" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none text-slate-700">
+                    <input type="text" id="filterSearchName" placeholder="근무자 이름 / 군번 검색"
+                        class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 w-48">
+                    <select id="filterDutyType"
+                        class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none text-slate-700">
                         <option value="">모든 근무 종류</option>
                     </select>
                 </div>
@@ -295,7 +328,8 @@
         <div id="tabContentMyDuty" class="hidden bg-white rounded-b-xl border border-slate-200 p-6 shadow-sm mb-6">
             <div class="max-w-2xl mx-auto">
                 <div class="text-center mb-6">
-                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <div
+                        class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
                         <i data-lucide="user-search" class="w-6 h-6"></i>
                     </div>
                     <h3 class="text-lg font-bold text-slate-900">내 당직·근무 일정 간편 조회</h3>
@@ -305,7 +339,8 @@
                 <!-- 근무자 선택 드롭다운 -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 flex items-center space-x-3">
                     <label for="selectMyPersonnel" class="text-sm font-semibold text-slate-700">근무자 선택:</label>
-                    <select id="selectMyPersonnel" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-emerald-500">
+                    <select id="selectMyPersonnel"
+                        class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- 성함을 선택해주세요 --</option>
                     </select>
                 </div>
@@ -331,7 +366,8 @@
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">당직 및 경계근무에 투입되는 간부 및 병사 목록을 등록하고 관리합니다.</p>
                     </div>
-                    <button id="btnOpenAddPersonnelModal" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
+                    <button id="btnOpenAddPersonnelModal"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
                         <i data-lucide="user-plus" class="w-4 h-4"></i>
                         <span>새 근무자 등록</span>
                     </button>
@@ -366,7 +402,8 @@
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">당직사령, 당직사관, 당직병, 초소근무 등 부대 규정에 맞는 근무를 설정합니다.</p>
                     </div>
-                    <button id="btnOpenAddDutyTypeModal" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
+                    <button id="btnOpenAddDutyTypeModal"
+                        class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         <span>근무 종류 추가</span>
                     </button>
@@ -401,7 +438,8 @@
     <!-- ========================================================== -->
     <!-- 모달 1: 근무 배정 등록 모달 (Admin) -->
     <!-- ========================================================== -->
-    <div id="modalAssignment" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
+    <div id="modalAssignment"
+        class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-content">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
@@ -416,42 +454,51 @@
             <form id="formAssignment" class="mt-4 space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">근무 일자 *</label>
-                    <input type="date" id="inputDutyDate" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
+                    <input type="date" id="inputDutyDate" required
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">근무 종류 *</label>
-                    <select id="inputDutyType" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
+                    <select id="inputDutyType" required
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- 근무 종류를 선택하세요 --</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">근무자 배정 *</label>
-                    <select id="inputPersonnel" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
+                    <select id="inputPersonnel" required
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- 근무자를 선택하세요 --</option>
                     </select>
                 </div>
 
                 <!-- 중복 배정 실시간 경고 배너 -->
-                <div id="conflictAlert" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start space-x-2">
+                <div id="conflictAlert"
+                    class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start space-x-2">
                     <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 mt-0.5 shrink-0"></i>
                     <span id="conflictAlertText">⚠️ 해당 인원은 해당 날짜에 이미 배정되어 있습니다!</span>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">역할 세부구분</label>
-                    <input type="text" id="inputRoleDetail" value="정" placeholder="예: 정, 부, 1번초, 통신 등" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="inputRoleDetail" value="정" placeholder="예: 정, 부, 1번초, 통신 등"
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">비고 및 지시사항</label>
-                    <textarea id="inputNotes" rows="2" placeholder="특이사항, 순찰 구역 또는 지시사항" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500"></textarea>
+                    <textarea id="inputNotes" rows="2" placeholder="특이사항, 순찰 구역 또는 지시사항"
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500"></textarea>
                 </div>
 
                 <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-                    <button type="button" class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">배정 등록 저장</button>
+                    <button type="button"
+                        class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
+                    <button type="submit"
+                        class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">배정
+                        등록 저장</button>
                 </div>
             </form>
         </div>
@@ -460,7 +507,8 @@
     <!-- ========================================================== -->
     <!-- 모달 2: 근무자 추가 모달 (Admin) -->
     <!-- ========================================================== -->
-    <div id="modalAddPersonnel" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
+    <div id="modalAddPersonnel"
+        class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-content">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
@@ -476,7 +524,8 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">성명 *</label>
-                        <input type="text" id="pName" required placeholder="예: 홍길동" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
+                        <input type="text" id="pName" required placeholder="예: 홍길동"
+                            class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">계급 *</label>
@@ -497,22 +546,28 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">군번 *</label>
-                    <input type="text" id="pServiceNumber" required placeholder="예: 24-76012345" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
+                    <input type="text" id="pServiceNumber" required placeholder="예: 24-76012345"
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">소속 (중대/포대) *</label>
-                    <input type="text" id="pUnit" required placeholder="예: 본부포대, 1중대" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
+                    <input type="text" id="pUnit" required placeholder="예: 본부포대, 1중대"
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">비상연락처</label>
-                    <input type="text" id="pPhone" placeholder="예: 010-1234-5678" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
+                    <input type="text" id="pPhone" placeholder="예: 010-1234-5678"
+                        class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
                 </div>
 
                 <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-                    <button type="button" class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">등록 완료</button>
+                    <button type="button"
+                        class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
+                    <button type="submit"
+                        class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">등록
+                        완료</button>
                 </div>
             </form>
         </div>
@@ -521,7 +576,8 @@
     <!-- ========================================================== -->
     <!-- 모달 3: Supabase 연동 설정 모달 -->
     <!-- ========================================================== -->
-    <div id="modalSupabaseConfig" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
+    <div id="modalSupabaseConfig"
+        class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-content">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div class="flex items-center space-x-2">
@@ -540,24 +596,32 @@
 
             <form id="formSupabaseConfig" class="mt-4 space-y-4">
                 <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
-                    💡 <strong>Supabase 연결 팁:</strong> Supabase 대시보드 ➔ <strong>Project Settings</strong> ➔ <strong>API</strong> 메뉴에서 <code>Project URL</code> 과 <code>anon public key</code>를 복사하여 아래에 붙여넣으세요.
+                    💡 <strong>Supabase 연결 팁:</strong> Supabase 대시보드 ➔ <strong>Project Settings</strong> ➔
+                    <strong>API</strong> 메뉴에서 <code>Project URL</code> 과 <code>anon public key</code>를 복사하여 아래에 붙여넣으세요.
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Project URL (예: https://xyz.supabase.co)</label>
-                    <input type="text" id="cfgSupabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" class="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Project URL (예:
+                        https://xyz.supabase.co)</label>
+                    <input type="text" id="cfgSupabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co"
+                        class="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Anon Public Key</label>
-                    <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
+                    <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        class="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <button type="button" id="btnClearConfig" class="text-xs text-red-600 hover:underline">설정 삭제 (로컬 데모 모드 복귀)</button>
+                    <button type="button" id="btnClearConfig" class="text-xs text-red-600 hover:underline">설정 삭제 (로컬 데모
+                        모드 복귀)</button>
                     <div class="flex items-center space-x-2">
-                        <button type="button" class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">닫기</button>
-                        <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">저장 및 연결</button>
+                        <button type="button"
+                            class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">닫기</button>
+                        <button type="submit"
+                            class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">저장
+                            및 연결</button>
                     </div>
                 </div>
             </form>
@@ -567,21 +631,27 @@
     <!-- ========================================================== -->
     <!-- 모달 4: 관리자 PIN 인증 모달 -->
     <!-- ========================================================== -->
-    <div id="modalAdminAuth" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
+    <div id="modalAdminAuth"
+        class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
         <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl modal-content text-center">
-            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div
+                class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="lock" class="w-6 h-6"></i>
             </div>
             <h3 class="text-base font-bold text-slate-900">관리자 인증</h3>
-            <p class="text-xs text-slate-500 mt-1 mb-4">관리자 전환 PIN 코드를 입력하세요.<br><span class="text-slate-400 font-mono">(기본 PIN: 1234)</span></p>
+            <p class="text-xs text-slate-500 mt-1 mb-4">관리자 전환 PIN 코드를 입력하세요.<br><span
+                    class="text-slate-400 font-mono">(기본 PIN: 1234)</span></p>
 
             <form id="formAdminPin" class="space-y-4">
-                <input type="password" id="inputAdminPin" maxlength="6" autofocus placeholder="PIN 4자리" class="w-full text-center text-lg tracking-widest font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500">
+                <input type="password" id="inputAdminPin" maxlength="6" autofocus placeholder="PIN 4자리"
+                    class="w-full text-center text-lg tracking-widest font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500">
                 <div id="pinErrorMsg" class="hidden text-xs text-red-600 font-medium">PIN 코드가 일치하지 않습니다.</div>
 
                 <div class="flex items-center space-x-2">
-                    <button type="button" class="modal-close-btn flex-1 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
-                    <button type="submit" class="flex-1 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow">확인</button>
+                    <button type="button"
+                        class="modal-close-btn flex-1 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
+                    <button type="submit"
+                        class="flex-1 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow">확인</button>
                 </div>
             </form>
         </div>
@@ -591,4 +661,5 @@
     <script src="supabaseClient.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>
