@@ -59,29 +59,55 @@ function startLiveClock() {
 // --------------------------------------------------------------------
 // 2. 전체 데이터 로딩 및 동기화
 // --------------------------------------------------------------------
+// --------------------------------------------------------------------
+// 2. 전체 데이터 로딩 및 동기화 (오류 발생 시 로컬 데이터 자동 폴백)
+// --------------------------------------------------------------------
 async function loadAllData() {
+    let personnel = [];
+    let dutyTypes = [];
+    let schedules = [];
+
     try {
-        const [personnel, dutyTypes, schedules] = await Promise.all([
+        [personnel, dutyTypes, schedules] = await Promise.all([
             dbGetPersonnel(),
             dbGetDutyTypes(),
             dbGetFullDutyData()
         ]);
+    } catch (dbErr) {
+        console.warn('DB 조회 오류 발생, 로컬 안전 데이터로 복구합니다:', dbErr);
+        // Supabase 조회 실패 시 빈 화면으로 멈추지 않도록 로컬 데이터로 안전 복구
+        const localDb = getLocalDB();
+        personnel = localDb.personnel || [];
+        dutyTypes = localDb.duty_types || [];
+        schedules = (localDb.duty_schedules || []).map(sch => {
+            const type = localDb.duty_types.find(t => t.id === sch.duty_type_id);
+            const asList = (localDb.duty_assignments || [])
+                .filter(a => a.schedule_id === sch.id)
+                .map(a => ({
+                    assignment_id: a.id,
+                    role_detail: a.role_detail,
+                    person: localDb.personnel.find(p => p.id === a.personnel_id)
+                }));
+            return { ...sch, duty_type: type, assignments: asList };
+        });
 
-        state.personnel = personnel;
-        state.dutyTypes = dutyTypes;
-        state.schedules = schedules;
-
-        // UI 전반 갱신
-        updateDashboardStats();
-        populateDropdowns();
-        renderCalendar();
-        renderListView();
-        renderMyDutyView();
-        renderManagePersonnelTable();
-        renderManageDutyTypesTable();
-    } catch (err) {
-        console.error('데이터 로드 실패:', err);
+        if (isSupabaseConnected()) {
+            console.error('Supabase 연동 상세 오류:', dbErr.message);
+        }
     }
+
+    state.personnel = personnel || [];
+    state.dutyTypes = dutyTypes || [];
+    state.schedules = schedules || [];
+
+    // UI 전반 갱신 (무조건 실행되어 화면이 멈추지 않음)
+    updateDashboardStats();
+    populateDropdowns();
+    renderCalendar();
+    renderListView();
+    renderMyDutyView();
+    renderManagePersonnelTable();
+    renderManageDutyTypesTable();
 }
 
 // --------------------------------------------------------------------
@@ -737,12 +763,16 @@ function setupEventListeners() {
     });
 
     // 8) Supabase 연동 모달 및 설정
-    document.getElementById('btnOpenSupabaseModal').addEventListener('click', () => {
+    const handleOpenSupabaseModal = () => {
         const cfg = getSupabaseConfig();
         document.getElementById('cfgSupabaseUrl').value = cfg.url;
         document.getElementById('cfgSupabaseKey').value = cfg.key;
         openModal('modalSupabaseConfig');
-    });
+    };
+
+    document.getElementById('btnOpenSupabaseModal').addEventListener('click', handleOpenSupabaseModal);
+    const bannerBtn = document.getElementById('btnBannerOpenSupabaseModal');
+    if (bannerBtn) bannerBtn.addEventListener('click', handleOpenSupabaseModal);
 
     document.getElementById('formSupabaseConfig').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -843,12 +873,15 @@ function openAssignmentModalWithDate(dateStr) {
 function updateSupabaseStatusUI() {
     const dot = document.getElementById('supabaseStatusDot');
     const text = document.getElementById('supabaseStatusText');
+    const banner = document.getElementById('supabaseConnectBanner');
 
     if (isSupabaseConnected()) {
         dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
         text.textContent = 'Supabase 연결됨';
+        if (banner) banner.classList.add('hidden');
     } else {
         dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
         text.textContent = '로컬 데모 모드';
+        if (banner) banner.classList.remove('hidden');
     }
 }
