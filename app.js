@@ -829,6 +829,8 @@ function setAdminMode(isAdmin) {
     const banner = document.getElementById('adminModeBanner');
     const tabManage = document.getElementById('tabBtnManage');
     const adminCols = document.querySelectorAll('.admin-only-col');
+    const btnSupabase = document.getElementById('btnOpenSupabaseModal');
+    const bannerSupabase = document.getElementById('supabaseConnectBanner');
 
     if (isAdmin) {
         btnAdmin.className = 'px-3 py-1 rounded text-xs font-semibold bg-amber-600 text-white shadow transition-all';
@@ -836,12 +838,16 @@ function setAdminMode(isAdmin) {
         banner.classList.remove('hidden');
         tabManage.classList.remove('hidden');
         adminCols.forEach(col => col.classList.remove('hidden'));
+        if (btnSupabase) btnSupabase.classList.remove('hidden');
+        if (bannerSupabase && !isSupabaseConnected()) bannerSupabase.classList.remove('hidden');
     } else {
         btnUser.className = 'px-3 py-1 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all';
         btnAdmin.className = 'px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition-all';
         banner.classList.add('hidden');
         tabManage.classList.add('hidden');
         adminCols.forEach(col => col.classList.add('hidden'));
+        if (btnSupabase) btnSupabase.classList.add('hidden');
+        if (bannerSupabase) bannerSupabase.classList.add('hidden');
     }
 
     renderCalendar();
@@ -882,6 +888,9 @@ function updateSupabaseStatusUI() {
     } else {
         dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
         text.textContent = '로컬 데모 모드';
-        if (banner) banner.classList.remove('hidden');
+        if (banner) {
+            if (state.isAdmin) banner.classList.remove('hidden');
+            else banner.classList.add('hidden');
+        }
     }
 }
