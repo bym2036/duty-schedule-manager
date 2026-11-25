@@ -1,0 +1,149 @@
+/* ====================================================================
+   스마트 국방 당직·근무 일정 관리 시스템 - 커스텀 스타일시트
+   ==================================================================== */
+
+:root {
+    --military-navy: #0f172a;
+    --military-blue: #1e3a8a;
+    --military-green: #14532d;
+    --military-gold: #d97706;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+}
+
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8fafc;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+}
+
+/* 캘린더 그리드 스타일 */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    background-color: #e2e8f0;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.calendar-header-day {
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    background-color: #f1f5f9;
+}
+
+.calendar-day-cell {
+    min-height: 110px;
+    background-color: #ffffff;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.15s ease-in-out;
+    position: relative;
+}
+
+.calendar-day-cell:hover {
+    background-color: #f8fafc;
+    cursor: pointer;
+}
+
+.calendar-day-cell.other-month {
+    background-color: #f8fafc;
+    opacity: 0.45;
+}
+
+.calendar-day-cell.is-today {
+    background-color: #eff6ff;
+    border: 2px solid #3b82f6;
+}
+
+.calendar-day-cell.my-duty-highlight {
+    background-color: #fef3c7 !important;
+    border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.duty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+/* 모달 애니메이션 */
+.modal-overlay {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    animation: scaleUp 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* 계급 뱃지 색상 */
+.badge-officer {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.badge-nco {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.badge-soldier {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+/* 인쇄용 스타일 */
+@media print {
+    header, nav, .no-print, button, .modal-overlay {
+        display: none !important;
+    }
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .shadow-sm, .shadow-md, .shadow-lg {
+        box-shadow: none !important;
+    }
+    .calendar-grid {
+        border-color: #000000;
+    }
+}
