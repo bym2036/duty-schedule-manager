@@ -1,577 +1,172 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 국방 당직·근무 일정 관리 시스템</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Pretendard Font -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <link rel="stylesheet" href="style.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        military: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
-                        },
-                        navy: {
-                            800: '#1e293b',
-                            900: '#0f172a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+이름-- ====================================================================
+-- 스마트 국방 당직·근무 일정 관리 시스템 (Smart Duty Guard Manager)
+-- Supabase 데이터베이스 생성 및 초기화 통합 SQL 스크립트
+-- ====================================================================
 
-    <!-- 최상단 네비게이션 헤더 -->
-    <header class="bg-navy-900 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- 로고 및 시스템 타이틀 -->
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center shadow-lg">
-                        <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center space-x-2">
-                            <h1 class="text-lg font-bold tracking-tight">스마트 국방 당직·근무 일정 관리 시스템</h1>
-                            <span class="bg-emerald-900 text-emerald-300 text-xs px-2 py-0.5 rounded-full border border-emerald-700">v2.0</span>
-                        </div>
-                        <p class="text-xs text-slate-400">부대 당직 편성 및 실시간 근무 조회 포털</p>
-                    </div>
-                </div>
+-- 1. 기존 테이블 정리 (필요 시 주석 해제하여 초기화)
+DROP TABLE IF EXISTS duty_assignments CASCADE;
+DROP TABLE IF EXISTS duty_schedules CASCADE;
+DROP TABLE IF EXISTS duty_types CASCADE;
+DROP TABLE IF EXISTS personnel CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
-                <!-- 실시간 시계 & 사용자/관리자 모드 & Supabase 설정 -->
-                <div class="flex items-center space-x-3">
-                    <!-- 실시간 시계 -->
-                    <div class="hidden md:flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
-                        <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
-                        <span id="liveClock" class="font-mono text-slate-200">2026-11-18 17:00:00</span>
-                    </div>
+-- 2. 사용자 및 관리자 계정 테이블 (users)
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    pin_code VARCHAR(20) DEFAULT '1234', -- 관리자 전환용 PIN 번호
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-                    <!-- Supabase 상태 뱃지 -->
-                    <button id="btnOpenSupabaseModal" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors bg-slate-800 border-slate-700 hover:bg-slate-700">
-                        <span id="supabaseStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                        <span id="supabaseStatusText" class="text-slate-300">연동 확인중</span>
-                        <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
-                    </button>
+-- 3. 근무자 정보 테이블 (personnel)
+CREATE TABLE personnel (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL,
+    rank VARCHAR(30) NOT NULL, -- 이병, 일병, 상병, 병장, 하사, 중사, 상사, 소위, 중위, 대위 등
+    service_number VARCHAR(50) UNIQUE NOT NULL, -- 군번 (고유값)
+    unit VARCHAR(100) NOT NULL, -- 소속 (예: 본부중대, 1중대, 2중대, 포대)
+    phone VARCHAR(30), -- 비상연락처
+    is_active BOOLEAN DEFAULT TRUE, -- 현재 복무/근무 투입 가능 여부
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-                    <!-- 관리자 / 일반 사용자 모드 토글 버튼 -->
-                    <div class="flex items-center bg-slate-800 p-1 rounded-lg border border-slate-700">
-                        <button id="btnModeUser" class="px-3 py-1 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all">
-                            일반 사용자
-                        </button>
-                        <button id="btnModeAdmin" class="px-3 py-1 rounded text-xs font-semibold text-slate-400 hover:text-white transition-all">
-                            관리자 모드
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+-- 4. 근무 종류 테이블 (duty_types)
+CREATE TABLE duty_types (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL, -- 예: 당직사령, 당직사관, 당직병, 불침번 1초소
+    category VARCHAR(50) NOT NULL, -- 간부당직, 병당직, 경계근무, 특수근무
+    required_count INT DEFAULT 1 CHECK (required_count > 0), -- 필요 인원수
+    start_time VARCHAR(10) NOT NULL, -- 시작 시간 (예: '08:30', '22:00')
+    end_time VARCHAR(10) NOT NULL,   -- 종료 시간 (예: '익일 08:30', '00:00')
+    color VARCHAR(20) DEFAULT '#2563EB', -- UI 뱃지 색상 코드
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-    <!-- 메인 컨테이너 -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+-- 5. 근무 일정 테이블 (duty_schedules)
+CREATE TABLE duty_schedules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    duty_date DATE NOT NULL, -- 근무 일자 (YYYY-MM-DD)
+    duty_type_id UUID NOT NULL REFERENCES duty_types(id) ON DELETE CASCADE,
+    notes TEXT, -- 특이사항 또는 지시사항
+    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'canceled')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-        <!-- 관리자 모드 활성화 알림 배너 (관리자일 때만 노출) -->
-        <div id="adminModeBanner" class="hidden mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600"></i>
-                    <div>
-                        <span class="font-bold text-amber-900 text-sm">관리자 권한으로 접속 중입니다.</span>
-                        <span class="text-xs text-amber-700 ml-2">근무 일정 등록, 수정, 삭제 및 부대원 관리가 가능합니다.</span>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button id="btnOpenAssignmentModal" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center space-x-1">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                        <span>새 근무 배정 등록</span>
-                    </button>
-                    <button id="btnQuickSeed" class="bg-slate-700 hover:bg-slate-800 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center space-x-1" title="시연 및 테스트용 샘플 데이터 자동 입력">
-                        <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
-                        <span>샘플 데이터 채우기</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+-- 6. 근무 배정 내역 테이블 (duty_assignments)
+CREATE TABLE duty_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    schedule_id UUID NOT NULL REFERENCES duty_schedules(id) ON DELETE CASCADE,
+    personnel_id UUID NOT NULL REFERENCES personnel(id) ON DELETE CASCADE,
+    role_detail VARCHAR(50) DEFAULT '정', -- 정/부, 1번초, 통신 등 세부 역할
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_schedule_personnel UNIQUE (schedule_id, personnel_id) -- 동일 일정 내 중복 배정 방지
+);
 
-        <!-- 대시보드 상단 요약 카드 (4열) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <!-- 오늘 당직사령/사관 -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                <div class="p-3 bg-red-50 text-red-600 rounded-lg">
-                    <i data-lucide="award" class="w-6 h-6"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-slate-500">오늘의 간부 당직</p>
-                    <p id="statTodayOfficer" class="text-sm font-bold text-slate-900 truncate mt-0.5">조회 중...</p>
-                </div>
-            </div>
+-- 7. 빠른 검색을 위한 인덱스 생성
+CREATE INDEX idx_schedules_date ON duty_schedules(duty_date);
+CREATE INDEX idx_assignments_schedule ON duty_assignments(schedule_id);
+CREATE INDEX idx_assignments_personnel ON duty_assignments(personnel_id);
+CREATE INDEX idx_personnel_service_num ON personnel(service_number);
 
-            <!-- 오늘 당직병/불침번 -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <i data-lucide="user-check" class="w-6 h-6"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-slate-500">오늘의 당직병 / 근무자</p>
-                    <p id="statTodaySoldier" class="text-sm font-bold text-slate-900 truncate mt-0.5">조회 중...</p>
-                </div>
-            </div>
+-- 8. Row Level Security (RLS) 정책 설정 (웹 프론트엔드 연동용)
+-- 누구나 조회 및 작성 가능하도록 익명(anon) 키에 대한 전체 접근 권한 허용
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE personnel ENABLE ROW LEVEL SECURITY;
+ALTER TABLE duty_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE duty_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE duty_assignments ENABLE ROW LEVEL SECURITY;
 
-            <!-- 이달의 총 근무 일정 -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                    <i data-lucide="calendar" class="w-6 h-6"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-slate-500">이번 달 총 근무 일정</p>
-                    <p id="statMonthCount" class="text-xl font-bold text-slate-900 mt-0.5">0건</p>
-                </div>
-            </div>
+CREATE POLICY "Allow anon read all" ON users FOR SELECT USING (true);
+CREATE POLICY "Allow anon write all" ON users FOR ALL USING (true);
 
-            <!-- 등록 인원 현황 -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-slate-500">부대 편성 인원</p>
-                    <p id="statPersonnelCount" class="text-xl font-bold text-slate-900 mt-0.5">0명</p>
-                </div>
-            </div>
-        </div>
+CREATE POLICY "Allow anon read all" ON personnel FOR SELECT USING (true);
+CREATE POLICY "Allow anon write all" ON personnel FOR ALL USING (true);
 
-        <!-- 탭 네비게이션 & 빠른 액션 바 -->
-        <div class="bg-white rounded-t-xl border-x border-t border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-            <!-- 탭 버튼들 -->
-            <div class="flex items-center space-x-1">
-                <button id="tabBtnCalendar" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-slate-900 text-white flex items-center space-x-2">
-                    <i data-lucide="calendar-days" class="w-4 h-4"></i>
-                    <span>월간 캘린더</span>
-                </button>
-                <button id="tabBtnList" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
-                    <i data-lucide="list-filter" class="w-4 h-4"></i>
-                    <span>일자별 전체 근무표</span>
-                </button>
-                <button id="tabBtnMyDuty" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
-                    <i data-lucide="user" class="w-4 h-4"></i>
-                    <span>내 근무 조회</span>
-                </button>
-                <button id="tabBtnManage" class="tab-btn hidden px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-2">
-                    <i data-lucide="settings-2" class="w-4 h-4"></i>
-                    <span>인원 및 근무종류 관리</span>
-                </button>
-            </div>
+CREATE POLICY "Allow anon read all" ON duty_types FOR SELECT USING (true);
+CREATE POLICY "Allow anon write all" ON duty_types FOR ALL USING (true);
 
-            <!-- 우측 보조 컨트롤 (내 근무 하이라이트 셀렉트박스 & 인쇄) -->
-            <div class="flex items-center space-x-2">
-                <div class="flex items-center space-x-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
-                    <label for="selectHighlightUser" class="text-slate-500 font-medium">근무자 강조:</label>
-                    <select id="selectHighlightUser" class="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer">
-                        <option value="">전체 보기</option>
-                    </select>
-                </div>
-                <button id="btnPrintSchedule" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg border border-slate-200" title="근무표 인쇄 / PDF 저장">
-                    <i data-lucide="printer" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
+CREATE POLICY "Allow anon read all" ON duty_schedules FOR SELECT USING (true);
+CREATE POLICY "Allow anon write all" ON duty_schedules FOR ALL USING (true);
 
-        <!-- 탭 1: 월간 캘린더 뷰 -->
-        <div id="tabContentCalendar" class="bg-white rounded-b-xl border border-slate-200 p-4 shadow-sm mb-6">
-            <!-- 캘린더 네비게이션 헤더 -->
-            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                <div class="flex items-center space-x-3">
-                    <h2 id="calendarMonthTitle" class="text-xl font-bold text-slate-900">2026년 11월</h2>
-                    <div class="flex items-center space-x-1">
-                        <button id="btnPrevMonth" class="p-1.5 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600">
-                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                        </button>
-                        <button id="btnCurrentMonth" class="px-2.5 py-1 text-xs font-semibold hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-700">
-                            오늘
-                        </button>
-                        <button id="btnNextMonth" class="p-1.5 hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600">
-                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
+CREATE POLICY "Allow anon read all" ON duty_assignments FOR SELECT USING (true);
+CREATE POLICY "Allow anon write all" ON duty_assignments FOR ALL USING (true);
 
-                <!-- 범례(Legend) -->
-                <div class="hidden sm:flex items-center space-x-3 text-xs text-slate-500">
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-red-600 inline-block"></span><span>당직사령</span></span>
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span><span>당직사관</span></span>
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span><span>당직병</span></span>
-                    <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span><span>경계/불침번</span></span>
-                </div>
-            </div>
+-- 9. 실무형 샘플 데이터 입력 (초기 테스트 및 시연용)
+-- (1) 기본 관리자 및 사용자
+INSERT INTO users (username, name, role, pin_code) VALUES
+('admin', '당직작전관', 'admin', '1234'),
+('soldier1', '김철수', 'user', '0000');
 
-            <!-- 요일 헤더 -->
-            <div class="calendar-grid mb-1">
-                <div class="calendar-header-day text-red-600">일 (SUN)</div>
-                <div class="calendar-header-day text-slate-700">월 (MON)</div>
-                <div class="calendar-header-day text-slate-700">화 (TUE)</div>
-                <div class="calendar-header-day text-slate-700">수 (WED)</div>
-                <div class="calendar-header-day text-slate-700">목 (THU)</div>
-                <div class="calendar-header-day text-slate-700">금 (FRI)</div>
-                <div class="calendar-header-day text-blue-600">토 (SAT)</div>
-            </div>
+-- (2) 근무자 기본 데이터 (간부 및 병사)
+INSERT INTO personnel (name, rank, service_number, unit, phone) VALUES
+('김태희', '대위', '19-100234', '본부포대', '010-1234-5678'),
+('박상준', '중위', '21-105678', '1포대', '010-2345-6789'),
+('이승원', '상사', '15-103412', '본부포대', '010-3456-7890'),
+('정민우', '중사', '18-107890', '2포대', '010-4567-8901'),
+('최현우', '병장', '24-76012345', '본부포대', '010-5678-9012'),
+('강동원', '상병', '24-76023456', '1포대', '010-6789-0123'),
+('윤시윤', '일병', '25-76034567', '2포대', '010-7890-1234'),
+('이진우', '병장', '24-76099999', '본부포대', '010-9999-8888'),
+('한지훈', '상병', '24-76056789', '본부포대', '010-8901-2345'),
+('송중기', '일병', '25-76067890', '1포대', '010-9012-3456');
 
-            <!-- 날짜 셀 그리드 (동적 생성) -->
-            <div id="calendarGrid" class="calendar-grid">
-                <!-- JavaScript 로 35~42개 셀 렌더링 -->
-            </div>
-        </div>
+-- (3) 근무 종류 기본 데이터
+INSERT INTO duty_types (name, category, required_count, start_time, end_time, color, description) VALUES
+('당직사령', '간부당직', 1, '08:30', '익일 08:30', '#DC2626', '부대 총괄 지휘 및 야간 비상대기'),
+('당직사관', '간부당직', 1, '08:30', '익일 08:30', '#2563EB', '중대 인원 점검, 총기 관리 및 일과 진행'),
+('당직병', '병당직', 1, '08:30', '익일 08:30', '#059669', '당직사관 보좌, 지휘통제실 기록 및 상황 보고'),
+('불침번 1초소', '경계근무', 1, '22:00', '24:00', '#7C3AED', '야간 생활관 내부 순찰 및 인원 이상유무 확인'),
+('불침번 2초소', '경계근무', 1, '00:00', '02:00', '#D97706', '야간 생활관 내부 순찰 및 화재 예방 점검'),
+('CCTV 감시병', '특수근무', 1, '18:00', '22:00', '#0891B2', '외곽 울타리 및 주요 시설 CCTV 집중 모니터링');
 
-        <!-- 탭 2: 일자별 전체 근무표 리스트 뷰 -->
-        <div id="tabContentList" class="hidden bg-white rounded-b-xl border border-slate-200 p-4 shadow-sm mb-6">
-            <!-- 검색 및 필터 헤더 -->
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-                <div class="flex items-center space-x-2">
-                    <input type="text" id="filterSearchName" placeholder="근무자 이름 / 군번 검색" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 w-48">
-                    <select id="filterDutyType" class="px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none text-slate-700">
-                        <option value="">모든 근무 종류</option>
-                    </select>
-                </div>
-                <div class="text-xs text-slate-500">
-                    총 <span id="listFilteredCount" class="font-bold text-slate-800">0</span>건의 배정 내역
-                </div>
-            </div>
+-- (4) 오늘과 내일의 근무 일정 및 배정 샘플 (CURRENT_DATE 기준)
+DO $$
+DECLARE
+    v_type_cmd UUID;
+    v_type_off UUID;
+    v_type_sol UUID;
+    v_type_guard1 UUID;
+    
+    v_p_kim UUID;
+    v_p_park UUID;
+    v_p_bae UUID;
+    v_p_kang UUID;
+    
+    v_sch_today_cmd UUID;
+    v_sch_today_off UUID;
+    v_sch_today_sol UUID;
+    v_sch_today_g1 UUID;
+BEGIN
+    SELECT id INTO v_type_cmd FROM duty_types WHERE name = '당직사령' LIMIT 1;
+    SELECT id INTO v_type_off FROM duty_types WHERE name = '당직사관' LIMIT 1;
+    SELECT id INTO v_type_sol FROM duty_types WHERE name = '당직병' LIMIT 1;
+    SELECT id INTO v_type_guard1 FROM duty_types WHERE name = '불침번 1초소' LIMIT 1;
 
-            <!-- 데이터 테이블 -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-700 border-collapse">
-                    <thead class="bg-slate-50 text-slate-500 uppercase border-b border-slate-200">
-                        <tr>
-                            <th class="py-3 px-4 font-semibold">근무 일자</th>
-                            <th class="py-3 px-4 font-semibold">근무 구분</th>
-                            <th class="py-3 px-4 font-semibold">근무 시간</th>
-                            <th class="py-3 px-4 font-semibold">배정 근무자</th>
-                            <th class="py-3 px-4 font-semibold">소속 및 군번</th>
-                            <th class="py-3 px-4 font-semibold">비고 / 지시사항</th>
-                            <th class="py-3 px-4 font-semibold text-right admin-only-col hidden">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dutyListTbody" class="divide-y divide-slate-100">
-                        <!-- 동적 렌더링 -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    SELECT id INTO v_p_kim FROM personnel WHERE name = '김태희' LIMIT 1;
+    SELECT id INTO v_p_park FROM personnel WHERE name = '박상준' LIMIT 1;
+    SELECT id INTO v_p_bae FROM personnel WHERE name = '이진우' LIMIT 1;
+    SELECT id INTO v_p_kang FROM personnel WHERE name = '강동원' LIMIT 1;
 
-        <!-- 탭 3: 내 근무 간편 조회 뷰 -->
-        <div id="tabContentMyDuty" class="hidden bg-white rounded-b-xl border border-slate-200 p-6 shadow-sm mb-6">
-            <div class="max-w-2xl mx-auto">
-                <div class="text-center mb-6">
-                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i data-lucide="user-search" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-slate-900">내 당직·근무 일정 간편 조회</h3>
-                    <p class="text-xs text-slate-500 mt-1">본인의 성함을 선택하면 다가오는 근무 일정과 세부 정보를 확인할 수 있습니다.</p>
-                </div>
+    -- 오늘 당직 일정 등록
+    INSERT INTO duty_schedules (duty_date, duty_type_id, notes)
+    VALUES (CURRENT_DATE, v_type_cmd, '기상악화 대비 영내 순찰 강화') RETURNING id INTO v_sch_today_cmd;
 
-                <!-- 근무자 선택 드롭다운 -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 flex items-center space-x-3">
-                    <label for="selectMyPersonnel" class="text-sm font-semibold text-slate-700">근무자 선택:</label>
-                    <select id="selectMyPersonnel" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-emerald-500">
-                        <option value="">-- 성함을 선택해주세요 --</option>
-                    </select>
-                </div>
+    INSERT INTO duty_schedules (duty_date, duty_type_id, notes)
+    VALUES (CURRENT_DATE, v_type_off, '저녁 점호 및 총기 전수 점검') RETURNING id INTO v_sch_today_off;
 
-                <!-- 선택된 인원의 근무 카드 섹션 -->
-                <div id="myDutyDetails" class="space-y-4">
-                    <div class="text-center py-10 text-slate-400 text-sm">
-                        근무자를 선택하시면 배정된 근무 일정이 여기에 표시됩니다.
-                    </div>
-                </div>
-            </div>
-        </div>
+    INSERT INTO duty_schedules (duty_date, duty_type_id, notes)
+    VALUES (CURRENT_DATE, v_type_sol, '보고체계 유지 및 상황일지 기록') RETURNING id INTO v_sch_today_sol;
 
-        <!-- 탭 4: 부대 인원 및 근무종류 관리 (관리자 전용) -->
-        <div id="tabContentManage" class="hidden space-y-6">
-            <!-- 1) 근무자 명단 관리 -->
-            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                            <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i>
-                            <span>부대 근무자 명단 관리</span>
-                        </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">당직 및 경계근무에 투입되는 간부 및 병사 목록을 등록하고 관리합니다.</p>
-                    </div>
-                    <button id="btnOpenAddPersonnelModal" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
-                        <i data-lucide="user-plus" class="w-4 h-4"></i>
-                        <span>새 근무자 등록</span>
-                    </button>
-                </div>
+    INSERT INTO duty_schedules (duty_date, duty_type_id, notes)
+    VALUES (CURRENT_DATE, v_type_guard1, '생활관 1층 순찰') RETURNING id INTO v_sch_today_g1;
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-700 border-collapse">
-                        <thead class="bg-slate-50 text-slate-500 uppercase border-b border-slate-200">
-                            <tr>
-                                <th class="py-2.5 px-4">계급</th>
-                                <th class="py-2.5 px-4">성명</th>
-                                <th class="py-2.5 px-4">군번</th>
-                                <th class="py-2.5 px-4">소속</th>
-                                <th class="py-2.5 px-4">비상연락처</th>
-                                <th class="py-2.5 px-4 text-right">관리</th>
-                            </tr>
-                        </thead>
-                        <tbody id="personnelTableBody" class="divide-y divide-slate-100">
-                            <!-- JS 렌더링 -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 2) 근무 종류 관리 -->
-            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                            <i data-lucide="shield" class="w-5 h-5 text-blue-600"></i>
-                            <span>근무 종류 및 규정 관리</span>
-                        </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">당직사령, 당직사관, 당직병, 초소근무 등 부대 규정에 맞는 근무를 설정합니다.</p>
-                    </div>
-                    <button id="btnOpenAddDutyTypeModal" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center space-x-1">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>근무 종류 추가</span>
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-700 border-collapse">
-                        <thead class="bg-slate-50 text-slate-500 uppercase border-b border-slate-200">
-                            <tr>
-                                <th class="py-2.5 px-4">근무명</th>
-                                <th class="py-2.5 px-4">구분</th>
-                                <th class="py-2.5 px-4">근무 시간</th>
-                                <th class="py-2.5 px-4">식별 색상</th>
-                                <th class="py-2.5 px-4">근무 설명</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dutyTypeTableBody" class="divide-y divide-slate-100">
-                            <!-- JS 렌더링 -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- 푸터 -->
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        <p>스마트 국방 당직·근무 일정 관리 시스템 © 2026. Powered by Supabase & Vercel</p>
-    </footer>
-
-    <!-- ========================================================== -->
-    <!-- 모달 1: 근무 배정 등록 모달 (Admin) -->
-    <!-- ========================================================== -->
-    <div id="modalAssignment" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-content">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                    <i data-lucide="calendar-plus" class="w-5 h-5 text-emerald-600"></i>
-                    <span>근무 배정 등록</span>
-                </h3>
-                <button class="modal-close-btn p-1 text-slate-400 hover:text-slate-600 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <form id="formAssignment" class="mt-4 space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">근무 일자 *</label>
-                    <input type="date" id="inputDutyDate" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">근무 종류 *</label>
-                    <select id="inputDutyType" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
-                        <option value="">-- 근무 종류를 선택하세요 --</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">근무자 배정 *</label>
-                    <select id="inputPersonnel" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
-                        <option value="">-- 근무자를 선택하세요 --</option>
-                    </select>
-                </div>
-
-                <!-- 중복 배정 실시간 경고 배너 -->
-                <div id="conflictAlert" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start space-x-2">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 mt-0.5 shrink-0"></i>
-                    <span id="conflictAlertText">⚠️ 해당 인원은 해당 날짜에 이미 배정되어 있습니다!</span>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">역할 세부구분</label>
-                    <input type="text" id="inputRoleDetail" value="정" placeholder="예: 정, 부, 1번초, 통신 등" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">비고 및 지시사항</label>
-                    <textarea id="inputNotes" rows="2" placeholder="특이사항, 순찰 구역 또는 지시사항" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500"></textarea>
-                </div>
-
-                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-                    <button type="button" class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">배정 등록 저장</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ========================================================== -->
-    <!-- 모달 2: 근무자 추가 모달 (Admin) -->
-    <!-- ========================================================== -->
-    <div id="modalAddPersonnel" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl modal-content">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                    <i data-lucide="user-plus" class="w-5 h-5 text-emerald-600"></i>
-                    <span>신규 근무자 등록</span>
-                </h3>
-                <button class="modal-close-btn p-1 text-slate-400 hover:text-slate-600 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <form id="formPersonnel" class="mt-4 space-y-4">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">성명 *</label>
-                        <input type="text" id="pName" required placeholder="예: 홍길동" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">계급 *</label>
-                        <select id="pRank" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
-                            <option value="대위">대위</option>
-                            <option value="중위">중위</option>
-                            <option value="소위">소위</option>
-                            <option value="상사">상사</option>
-                            <option value="중사">중사</option>
-                            <option value="하사">하사</option>
-                            <option value="병장" selected>병장</option>
-                            <option value="상병">상병</option>
-                            <option value="일병">일병</option>
-                            <option value="이병">이병</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">군번 *</label>
-                    <input type="text" id="pServiceNumber" required placeholder="예: 24-76012345" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">소속 (중대/포대) *</label>
-                    <input type="text" id="pUnit" required placeholder="예: 본부포대, 1중대" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">비상연락처</label>
-                    <input type="text" id="pPhone" placeholder="예: 010-1234-5678" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2">
-                </div>
-
-                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-                    <button type="button" class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">등록 완료</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ========================================================== -->
-    <!-- 모달 3: Supabase 연동 설정 모달 -->
-    <!-- ========================================================== -->
-    <div id="modalSupabaseConfig" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl modal-content">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div class="flex items-center space-x-2">
-                    <div class="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                        <i data-lucide="database" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Supabase 데이터베이스 연동 설정</h3>
-                        <p class="text-xs text-slate-500">프로젝트의 URL과 anon public key를 입력하세요.</p>
-                    </div>
-                </div>
-                <button class="modal-close-btn p-1 text-slate-400 hover:text-slate-600 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <form id="formSupabaseConfig" class="mt-4 space-y-4">
-                <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
-                    💡 <strong>Supabase 연결 팁:</strong> Supabase 대시보드 ➔ <strong>Project Settings</strong> ➔ <strong>API</strong> 메뉴에서 <code>Project URL</code> 과 <code>anon public key</code>를 복사하여 아래에 붙여넣으세요.
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Project URL (예: https://xyz.supabase.co)</label>
-                    <input type="text" id="cfgSupabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" class="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Anon Public Key</label>
-                    <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500">
-                </div>
-
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <button type="button" id="btnClearConfig" class="text-xs text-red-600 hover:underline">설정 삭제 (로컬 데모 모드 복귀)</button>
-                    <div class="flex items-center space-x-2">
-                        <button type="button" class="modal-close-btn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">닫기</button>
-                        <button type="submit" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow">저장 및 연결</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ========================================================== -->
-    <!-- 모달 4: 관리자 PIN 인증 모달 -->
-    <!-- ========================================================== -->
-    <div id="modalAdminAuth" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden modal-overlay">
-        <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl modal-content text-center">
-            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i data-lucide="lock" class="w-6 h-6"></i>
-            </div>
-            <h3 class="text-base font-bold text-slate-900">관리자 인증</h3>
-            <p class="text-xs text-slate-500 mt-1 mb-4">관리자 전환 PIN 코드를 입력하세요.<br><span class="text-slate-400 font-mono">(기본 PIN: 1234)</span></p>
-
-            <form id="formAdminPin" class="space-y-4">
-                <input type="password" id="inputAdminPin" maxlength="6" autofocus placeholder="PIN 4자리" class="w-full text-center text-lg tracking-widest font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500">
-                <div id="pinErrorMsg" class="hidden text-xs text-red-600 font-medium">PIN 코드가 일치하지 않습니다.</div>
-
-                <div class="flex items-center space-x-2">
-                    <button type="button" class="modal-close-btn flex-1 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">취소</button>
-                    <button type="submit" class="flex-1 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow">확인</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 스크립트 연결 -->
-    <script src="supabaseClient.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+    -- 오늘 근무자 배정
+    INSERT INTO duty_assignments (schedule_id, personnel_id, role_detail) VALUES
+    (v_sch_today_cmd, v_p_kim, '정'),
+    (v_sch_today_off, v_p_park, '정'),
+    (v_sch_today_sol, v_p_bae, '정'),
+    (v_sch_today_g1, v_p_kang, '1번초');
+END $$;
