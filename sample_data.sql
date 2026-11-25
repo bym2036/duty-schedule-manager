@@ -109,7 +109,7 @@ INSERT INTO personnel (name, rank, service_number, unit, phone) VALUES
 ('최현우', '병장', '24-76012345', '본부포대', '010-5678-9012'),
 ('강동원', '상병', '24-76023456', '1포대', '010-6789-0123'),
 ('윤시윤', '일병', '25-76034567', '2포대', '010-7890-1234'),
-('배영민', '병장', '24-76099999', '본부포대', '010-9999-8888'),
+('이진우', '병장', '24-76099999', '본부포대', '010-9999-8888'),
 ('한지훈', '상병', '24-76056789', '본부포대', '010-8901-2345'),
 ('송중기', '일병', '25-76067890', '1포대', '010-9012-3456');
 
@@ -147,7 +147,7 @@ BEGIN
 
     SELECT id INTO v_p_kim FROM personnel WHERE name = '김태희' LIMIT 1;
     SELECT id INTO v_p_park FROM personnel WHERE name = '박상준' LIMIT 1;
-    SELECT id INTO v_p_bae FROM personnel WHERE name = '배영민' LIMIT 1;
+    SELECT id INTO v_p_bae FROM personnel WHERE name = '이진우' LIMIT 1;
     SELECT id INTO v_p_kang FROM personnel WHERE name = '강동원' LIMIT 1;
 
     -- 오늘 당직 일정 등록

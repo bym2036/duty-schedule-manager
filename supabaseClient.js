@@ -77,7 +77,7 @@ function getLocalDB() {
             { id: 'p2', name: '박상준', rank: '중위', service_number: '21-105678', unit: '1포대', phone: '010-2345-6789', is_active: true },
             { id: 'p3', name: '이승원', rank: '상사', service_number: '15-103412', unit: '본부포대', phone: '010-3456-7890', is_active: true },
             { id: 'p4', name: '정민우', rank: '중사', service_number: '18-107890', unit: '2포대', phone: '010-4567-8901', is_active: true },
-            { id: 'p5', name: '배영민', rank: '병장', service_number: '24-76099999', unit: '본부포대', phone: '010-9999-8888', is_active: true },
+            { id: 'p5', name: '이진우', rank: '병장', service_number: '24-76099999', unit: '본부포대', phone: '010-9999-8888', is_active: true },
             { id: 'p6', name: '최현우', rank: '병장', service_number: '24-76012345', unit: '본부포대', phone: '010-5678-9012', is_active: true },
             { id: 'p7', name: '강동원', rank: '상병', service_number: '24-76023456', unit: '1포대', phone: '010-6789-0123', is_active: true },
             { id: 'p8', name: '윤시윤', rank: '일병', service_number: '25-76034567', unit: '2포대', phone: '010-7890-1234', is_active: true }
@@ -407,7 +407,7 @@ async function dbSeedData() {
         { name: '박상준', rank: '중위', service_number: '21-105678', unit: '1포대', phone: '010-2345-6789' },
         { name: '이승원', rank: '상사', service_number: '15-103412', unit: '본부포대', phone: '010-3456-7890' },
         { name: '정민우', rank: '중사', service_number: '18-107890', unit: '2포대', phone: '010-4567-8901' },
-        { name: '배영민', rank: '병장', service_number: '24-76099999', unit: '본부포대', phone: '010-9999-8888' },
+        { name: '이진우', rank: '병장', service_number: '24-76099999', unit: '본부포대', phone: '010-9999-8888' },
         { name: '최현우', rank: '병장', service_number: '24-76012345', unit: '본부포대', phone: '010-5678-9012' },
         { name: '강동원', rank: '상병', service_number: '24-76023456', unit: '1포대', phone: '010-6789-0123' },
         { name: '윤시윤', rank: '일병', service_number: '25-76034567', unit: '2포대', phone: '010-7890-1234' }
@@ -421,8 +421,28 @@ async function dbSeedData() {
         { name: '불침번 2초소', category: '경계근무', required_count: 1, start_time: '00:00', end_time: '02:00', color: '#D97706', description: '생활관 2층 순찰 및 화재 예방' }
     ];
 
-    await supabaseClient.from('personnel').upsert(samplePersonnel, { onConflict: 'service_number' });
-    await supabaseClient.from('duty_types').upsert(sampleTypes, { onConflict: 'name' });
+    // 1) 근무자 및 근무종류 등록
+    const { data: pData } = await supabaseClient.from('personnel').upsert(samplePersonnel, { onConflict: 'service_number' }).select();
+    const { data: dtData } = await supabaseClient.from('duty_types').upsert(sampleTypes, { onConflict: 'name' }).select();
+
+    // 2) 오늘 날짜 기준 샘플 당직 일정 및 배정 등록
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (pData && dtData && pData.length >= 4 && dtData.length >= 4) {
+        const cmdType = dtData.find(t => t.name === '당직사령') || dtData[0];
+        const offType = dtData.find(t => t.name === '당직사관') || dtData[1];
+        const solType = dtData.find(t => t.name === '당직병') || dtData[2];
+        const guardType = dtData.find(t => t.name.includes('불침번')) || dtData[3];
+
+        const pOfficer1 = pData.find(p => p.rank === '대위') || pData[0];
+        const pOfficer2 = pData.find(p => p.rank === '중위') || pData[1];
+        const pSoldier = pData.find(p => p.name === '이진우') || pData[4];
+        const pGuard = pData.find(p => p.rank === '상병') || pData[6];
+
+        await dbAddAssignment({ dutyDate: todayStr, dutyTypeId: cmdType.id, personnelId: pOfficer1.id, roleDetail: '정', notes: '기상악화 대비 영내 순찰 철저' });
+        await dbAddAssignment({ dutyDate: todayStr, dutyTypeId: offType.id, personnelId: pOfficer2.id, roleDetail: '정', notes: '저녁 점호 및 총기 전수 점검' });
+        await dbAddAssignment({ dutyDate: todayStr, dutyTypeId: solType.id, personnelId: pSoldier.id, roleDetail: '정', notes: '상황일지 기록 철저' });
+        await dbAddAssignment({ dutyDate: todayStr, dutyTypeId: guardType.id, personnelId: pGuard.id, roleDetail: '1번초', notes: '생활관 순찰' });
+    }
 
     return true;
 }
